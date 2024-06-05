@@ -1,0 +1,400 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/Card.astro';
+import { getCount } from './events';
+
+const current_count = getCount();
+---
+
+<script>
+	let textOne = document.getElementById('textOne');
+	let textTwo = document.getElementById('textTwo');
+	let keyword = document.getElementById('keyword');
+
+	let elements = {
+		textOne,
+		textTwo,
+		keyword,
+	};
+
+	let stopAutoScroll = {
+		textOne: false,
+		textTwo: false,
+		keyword: false,
+	};
+	const stop = document.getElementById('stop');
+	const start = document.getElementById('start');
+
+	let eventSource = new EventSource('/api/stream');
+
+	function scrollToBottom(element) {
+		if (!stopAutoScroll[element]) {
+			elements[element].scrollTop = elements[element].scrollHeight;
+		}
+	}
+
+	function onMessage(event) {
+		const data = JSON.parse(event.data);
+		textOne.textContent += `Counter: ${data.counter}`;
+		if (!stopAutoScroll.textOne) {
+			textOne.scrollTop = textOne.scrollHeight;
+		}
+
+		if (data?.transcript?.textTwo) {
+			textTwo.textContent += data.transcript;
+			scrollToBottom('textTwo');
+		}
+
+		if (data?.keyword) {
+			keyword.textContent += data.keyword;
+			scrollToBottom('keyword');
+		}
+	}
+
+	eventSource.onmessage = onMessage;
+
+	eventSource.onerror = function (event) {
+		console.error('EventSource failed:', event);
+		eventSource.close();
+	};
+
+	window.onbeforeunload = function () {
+		eventSource.close();
+	};
+
+	function closeConnection() {
+		console.log('Closing connection');
+		eventSource.close();
+	}
+
+	function startConnection() {
+		eventSource.close();
+		eventSource = new EventSource('/api/stream');
+		eventSource.onmessage = onMessage;
+	}
+
+	function startAutoScrollAll() {
+		scrollToBottom('textOne');
+		scrollToBottom('textTwo');
+		scrollToBottom('keyword');
+	}
+
+	function stopAutoScrollAll() {
+		stopAutoScroll.textOne = true;
+		stopAutoScroll.textTwo = true;
+		stopAutoScroll.keyword = true;
+	}
+
+	function stopAutoScollIndividual(element) {
+		stopAutoScroll[element] = true;
+	}
+
+	textOne.addEventListener('mouseenter', () => {
+		stopAutoScroll.textOne = true;
+	});
+
+	textOne.addEventListener('mouseleave', () => {
+		stopAutoScroll.textOne = false;
+	});
+
+	textTwo.addEventListener('mouseenter', () => {
+		stopAutoScroll.textTwo = true;
+	});
+
+	textTwo.addEventListener('mouseleave', () => {
+		stopAutoScroll.textTwo = false;
+	});
+
+	keyword.addEventListener('mouseenter', () => {
+		stopAutoScroll.keyword = true;
+	});
+
+	keyword.addEventListener('mouseleave', () => {
+		stopAutoScroll.keyword = false;
+	});
+
+	start.addEventListener('click', startConnection);
+	stop.addEventListener('click', closeConnection);
+</script>
+
+<Layout title='Welcome to Astro.'>
+	<main>
+		<div class='header'>
+			<h2>Transcript:</h2>
+			<div>
+				<button id='stop' class='danger'>Stop</button>
+				<button id='start' class='success'>Start</button>
+			</div>
+		</div>
+		<div class='grid'>
+			<div>
+				<div class='textarea-header'>
+					<span>Text Area Transcript 1</span>
+					<span>
+						<svg
+							class='w-6 h-6 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 24'>
+							<path
+								stroke='currentColor'
+								stroke-linecap='round'
+								stroke-linejoin='round'
+								stroke-width='2'
+								d='M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4'
+							></path>
+						</svg>
+					</span>
+					<span>
+						<svg
+							class='w-6 h-6 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 24'>
+							<rect
+								width='12'
+								height='12'
+								x='6'
+								y='6'
+								stroke='currentColor'
+								stroke-linejoin='round'
+								stroke-width='2'
+								rx='1'></rect>
+						</svg>
+					</span>
+					<span>
+						<svg
+							class='w-6 h-6 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 24'>
+							<path
+								stroke='currentColor'
+								stroke-linecap='round'
+								stroke-linejoin='round'
+								stroke-width='2'
+								d='M8 18V6l8 6-8 6Z'></path>
+						</svg>
+					</span>
+				</div>
+				<div id='textOne'></div>
+			</div>
+			<div>
+				<div class='textarea-header'>
+					<span>Text Area Transcript 2</span>
+					<span>
+						<button>
+						<svg
+							class='w-6 h-6 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 20'>
+							<path
+								stroke='currentColor'
+								stroke-linecap='round'
+								stroke-linejoin='round'
+								stroke-width='2'
+								d='M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4'
+							></path>
+						</svg>
+						</button>
+					</span>
+					<span>
+						<button>
+						<svg
+							class='w-6 h-5 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 20'>
+							<rect
+								width='12'
+								height='12'
+								x='6'
+								y='6'
+								stroke='currentColor'
+								stroke-linejoin='round'
+								stroke-width='2'
+								rx='1'></rect>
+						</svg>
+						</button>
+					</span>
+					<span>
+						<button>
+						<svg
+							class='w-6 h-6 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 20'>
+							<path
+								stroke='currentColor'
+								stroke-linecap='round'
+								stroke-linejoin='round'
+								stroke-width='2'
+								d='M8 18V6l8 6-8 6Z'></path>
+						</svg>
+						</button>	
+					</span>
+				</div>
+				<div id='textTwo'></div>
+			</div>
+			<div>
+				<div class='textarea-header'>
+					<span>Keywords</span>
+					<span>
+						<svg
+							class='w-6 h-6 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 24'>
+							<path
+								stroke='currentColor'
+								stroke-linecap='round'
+								stroke-linejoin='round'
+								stroke-width='2'
+								d='M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4'
+							></path>
+						</svg>
+					</span>
+					<span>
+						<svg
+							class='w-6 h-6 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 24'>
+							<rect
+								width='12'
+								height='12'
+								x='6'
+								y='6'
+								stroke='currentColor'
+								stroke-linejoin='round'
+								stroke-width='2'
+								rx='1'></rect>
+						</svg>
+					</span>
+					<span>
+						<svg
+							class='w-6 h-5 text-gray-800 dark:text-white'
+							aria-hidden='true'
+							xmlns='http://www.w3.org/2000/svg'
+							width='24'
+							height='24'
+							fill='none'
+							viewBox='0 0 24 24'>
+							<path
+								stroke='currentColor'
+								stroke-linecap='round'
+								stroke-linejoin='round'
+								stroke-width='2'
+								d='M8 18V6l8 6-8 6Z'></path>
+						</svg>
+					</span>
+				</div>
+				<div id='keyword'></div>
+			</div>
+		</div>
+	</main>
+</Layout>
+
+<style>
+	main {
+		margin: auto;
+		padding: 1rem;
+		width: calc(100% - 2rem);
+		color: rgba(255, 255, 255, 0.747);
+		font-size: 20px;
+		line-height: 1.6;
+	}
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+
+	.header button {
+		border: none;
+		color: rgba(255, 255, 255, 0.76);
+		padding: 15px 32px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+		margin: 4px 2px;
+		cursor: pointer;
+	}
+
+	.success {
+		background-color: #4caf50;
+	}
+
+	.danger {
+		background-color: #f44336;
+	}
+
+	.textarea-header {
+		margin-bottom: 8px;
+		border-radius: 8px;
+		background-color: #484d538a;
+		font-weight: 700;
+		text-decoration: solid;
+		display: flex;
+		padding: 8px;
+
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		gap: 2rem;
+	}
+	.grid > div {
+		border: 1px solid rgba(95, 107, 122, 0.699);
+		border-radius: 10px;
+		padding: 1rem;
+		height: 400px;
+		font-size: medium;
+	}
+
+	#textOne,
+	#textTwo,
+	#keyword {
+		height: 350px;
+		overflow-y: scroll;
+		scroll-behavior: smooth;
+		scroll-snap-type: mandatory;
+	}
+
+	h2 {
+		font-size: 2rem;
+		font-weight: 700;
+		line-height: 1;
+		text-align: center;
+		margin-bottom: 0.5em;
+	}
+</style>
